@@ -79,6 +79,8 @@ The Cloud Function receives HTTP POST requests with commands, validates authenti
 - `get_help` - Get help information
 - `joystick_control` - Joystick input (l_left, l_forward, r_left, r_forward)
 - `speak` - Text-to-speech (text: string, max 500 chars)
+- `battery` - Get battery status (no parameters)
+- `beep` - Play beep sound (frequency: optional, duration: optional)
 
 **Note:** Duration of 0 means continuous movement until stop command is sent.
 
@@ -159,6 +161,18 @@ npm run lint              # Code linting
 - Robot uses ev3.speaker.say() from pybricks library
 - Simulation mode prints text instead of speaking
 - Command returns success with echoed text
+
+**Battery Status (battery command):**
+- Cloud Function sends action: "battery" to EV3
+- EV3 responds with voltage_mv, voltage_v, current_ma, percentage, battery_type
+- No parameters required
+- Returns comprehensive battery information
+
+**Beep Sound (beep command):**
+- Cloud Function sends action: "beep" with optional frequency and duration
+- If frequency/duration not provided, EV3 uses defaults
+- Both parameters are optional and forwarded as-is to EV3
+- EV3 handles the actual beep generation
 
 ### Testing Considerations
 - Robot must be running on 178.183.200.201:27700 for live tests

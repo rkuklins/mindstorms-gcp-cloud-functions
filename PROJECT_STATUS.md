@@ -95,6 +95,8 @@ A Google Cloud Function that provides remote control capabilities for LEGO Minds
 | `get_help` | Get help information | None |
 | `joystick_control` | Joystick input | `l_left`, `l_forward`, `r_left`, `r_forward` |
 | `speak` | **🆕 Text-to-speech** | `text` (string, max 500 chars) |
+| `battery` | **🆕 Get battery status** | None |
+| `beep` | **🆕 Play beep sound** | `frequency` (optional), `duration` (optional) |
 
 ---
 
@@ -198,7 +200,11 @@ npm run lint         # Code linting
 
 ### Latest Updates (October 2025)
 - ✅ **Added `speak` command** for text-to-speech functionality
+- ✅ **Added `battery` command** to query battery status
+- ✅ **Added `beep` command** with optional frequency and duration
 - ✅ **Added `stop_turret` command** for independent turret stopping
+- ✅ **Improved TCP data handling** to process multiple packets correctly
+- ✅ **Enhanced response parsing** to skip non-JSON messages
 - ✅ **Enhanced CORS configuration** with OPTIONS method support
 - ✅ **Updated API key handling** in headers
 - ✅ **Improved error handling** with detailed responses

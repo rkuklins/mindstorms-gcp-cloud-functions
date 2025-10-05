@@ -75,13 +75,16 @@ function sendCommandToRobot(action, direction = null, speed = null, duration = n
             continue;
           }
 
-          // Skip welcome messages
-          if (message.includes('Welcome') || message.includes('Send JSON')) {
-            console.log('SKIPPING: Welcome message detected');
+          // Skip welcome messages and non-JSON informational messages
+          if (message.includes('Welcome') ||
+              message.includes('Send JSON') ||
+              message.startsWith('Supported:') ||
+              message.startsWith('Command received:')) {
+            console.log('SKIPPING: Informational message detected');
             continue;
           }
 
-          // Try to parse as JSON
+          // Try to parse as JSON - only accept JSON responses
           try {
             const parsed = JSON.parse(message);
             console.log(`SUCCESS: Parsed JSON: ${JSON.stringify(parsed)}`);
@@ -91,14 +94,9 @@ function sendCommandToRobot(action, direction = null, speed = null, duration = n
             return;
           } catch (error) {
             console.log(`PARSE ERROR: ${error.message}`);
-            console.log(`Message was: ${message}`);
-            // If it's not JSON but looks like a valid response, return it
-            if (message.trim().length > 0) {
-              console.log(`Resolving with text response`);
-              client.destroy();
-              resolve({ success: true, response: message.trim() });
-              return;
-            }
+            console.log(`Not JSON, skipping: ${message}`);
+            // Skip non-JSON messages, continue waiting for JSON response
+            continue;
           }
         }
         console.log('End of data event handler, waiting for more data...');

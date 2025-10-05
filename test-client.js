@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const CLOUD_FUNCTION_URL = 'https://europe-central2-wrack-control.cloudfunctions.net/controlRobot';
-const API_KEY = 'your-api-key-here';
+const API_KEY = process.env.API_KEY || 'your-api-key-here';
 
 async function testRobotCommand(command, params = {}) {
   try {
