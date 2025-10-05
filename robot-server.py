@@ -54,12 +54,16 @@ class MindstormsRobotServer:
                 return self._handle_turret(direction, speed, duration)
             elif action == 'stop':
                 return self._stop()
+            elif action == 'stop_turret':
+                return self._stop_turret()
             elif action == 'status':
                 return self._get_status()
             elif action == 'help':
                 return self._get_help()
             elif action == 'joystick':
                 return self._handle_joystick(command_data)
+            elif action == 'speak':
+                return self._speak(command_data)
             else:
                 return {'success': False, 'error': f'Unknown action: {action}'}
                 
@@ -161,8 +165,28 @@ class MindstormsRobotServer:
             self.left_motor.stop()
             self.right_motor.stop()
             self.turret_motor.stop()
-        
+
         return {'success': True, 'action': 'stopped'}
+
+    def _stop_turret(self):
+        if PYBRICKS_AVAILABLE:
+            self.turret_motor.stop()
+
+        return {'success': True, 'action': 'stop_turret'}
+
+    def _speak(self, command_data):
+        """Handle text-to-speech command"""
+        text = command_data.get('text', '')
+
+        if PYBRICKS_AVAILABLE:
+            try:
+                self.ev3.speaker.say(text)
+            except Exception as e:
+                return {'success': False, 'error': f'TTS error: {str(e)}'}
+        else:
+            print(f"[SIMULATION] Would speak: {text}")
+
+        return {'success': True, 'action': 'speak', 'text': text}
     
     def _get_status(self):
         """Return robot status information"""
@@ -201,22 +225,27 @@ class MindstormsRobotServer:
         return {
             'success': True,
             'available_actions': [
-                'move', 'stop', 'status', 'help', 'joystick'
+                'move', 'turret', 'stop', 'stop_turret', 'status', 'help', 'joystick', 'speak'
             ],
             'move_directions': ['forward', 'backward', 'left', 'right'],
+            'turret_directions': ['left', 'right'],
             'parameters': {
                 'speed': 'Motor speed (0-2000)',
                 'duration': 'Duration in seconds (0 for continuous)',
                 'l_left': 'Left joystick left/right (-1000 to 1000)',
                 'l_forward': 'Left joystick forward/backward (-1000 to 1000)',
                 'r_left': 'Right joystick left/right (-1000 to 1000)',
-                'r_forward': 'Right joystick forward/backward (-1000 to 1000)'
+                'r_forward': 'Right joystick forward/backward (-1000 to 1000)',
+                'text': 'Text to speak (max 500 characters)'
             },
             'examples': [
                 '{"action": "move", "direction": "forward", "speed": 500, "duration": 2}',
                 '{"action": "move", "direction": "left", "speed": 300, "duration": 1}',
+                '{"action": "turret", "direction": "left", "speed": 200, "duration": 1}',
                 '{"action": "stop"}',
-                '{"action": "joystick", "l_left": -200, "l_forward": 500}'
+                '{"action": "stop_turret"}',
+                '{"action": "joystick", "l_left": -200, "l_forward": 500}',
+                '{"action": "speak", "text": "Hello World"}'
             ]
         }
     

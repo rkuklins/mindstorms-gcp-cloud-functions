@@ -40,27 +40,68 @@ function sendCommandToRobot(action, direction = null, speed = null, duration = n
       console.log(`Sending full message: ${JSON.stringify(fullMessage)}`);
       client.write(fullMessage);
       
-      // Wait for response
+      // Wait for response - accumulate data chunks
+      let buffer = '';
       client.on('data', (data) => {
-        const response = data.toString();
-        console.log(`Received from robot: ${response}`);
-        
-        // Skip welcome messages, look for JSON responses
-        if (response.includes('Welcome') || response.includes('Send JSON')) {
-          console.log('Received welcome message, waiting for command response...');
-          return;
+        const chunk = data.toString();
+        buffer += chunk;
+
+        console.log('=== DATA EVENT ===');
+        console.log(`Raw chunk bytes: ${data.length}`);
+        console.log(`Raw chunk hex: ${data.toString('hex')}`);
+        console.log(`Chunk as string: ${chunk}`);
+        console.log(`Buffer length: ${buffer.length}`);
+        console.log(`Full buffer: ${buffer}`);
+        console.log('==================');
+
+        // Split by newlines to process complete messages
+        const messages = buffer.split('\n');
+        console.log(`Split into ${messages.length} parts`);
+
+        // Keep the last incomplete message in the buffer
+        buffer = messages.pop() || '';
+        console.log(`Remaining in buffer: "${buffer}"`);
+
+        // Process each complete message
+        for (let i = 0; i < messages.length; i++) {
+          const message = messages[i];
+          console.log(`\n--- Message ${i + 1} ---`);
+          console.log(`Length: ${message.length}`);
+          console.log(`Content: ${message}`);
+          console.log(`Trimmed: ${message.trim()}`);
+
+          if (!message.trim()) {
+            console.log('Empty message, skipping');
+            continue;
+          }
+
+          // Skip welcome messages
+          if (message.includes('Welcome') || message.includes('Send JSON')) {
+            console.log('SKIPPING: Welcome message detected');
+            continue;
+          }
+
+          // Try to parse as JSON
+          try {
+            const parsed = JSON.parse(message);
+            console.log(`SUCCESS: Parsed JSON: ${JSON.stringify(parsed)}`);
+            console.log(`Resolving with parsed data and destroying connection`);
+            client.destroy();
+            resolve(parsed);
+            return;
+          } catch (error) {
+            console.log(`PARSE ERROR: ${error.message}`);
+            console.log(`Message was: ${message}`);
+            // If it's not JSON but looks like a valid response, return it
+            if (message.trim().length > 0) {
+              console.log(`Resolving with text response`);
+              client.destroy();
+              resolve({ success: true, response: message.trim() });
+              return;
+            }
+          }
         }
-        
-        // This should be the response to our command
-        try {
-          const parsed = JSON.parse(response);
-          client.destroy();
-          resolve(parsed);
-        } catch (error) {
-          // Handle plain text responses
-          client.destroy();
-          resolve({ success: true, response: response.trim() });
-        }
+        console.log('End of data event handler, waiting for more data...');
       });
     });
 
@@ -82,7 +123,7 @@ function sendCommandToRobot(action, direction = null, speed = null, duration = n
 function validateCommand(command, params) {
   const validCommands = [
     'forward',
-    'backward', 
+    'backward',
     'left',
     'right',
     'turret_left',
@@ -91,7 +132,10 @@ function validateCommand(command, params) {
     'stop_turret',
     'get_status',
     'joystick_control',
-    'get_help'
+    'get_help',
+    'speak',
+    'battery',
+    'beep'
   ];
 
   if (!validCommands.includes(command)) {
@@ -104,6 +148,15 @@ function validateCommand(command, params) {
 
   if (params.duration && params.duration > 10) {
     throw new Error('Duration cannot exceed 10 seconds for safety');
+  }
+
+  if (command === 'speak') {
+    if (!params.text || typeof params.text !== 'string') {
+      throw new Error('Text parameter is required for speak command');
+    }
+    if (params.text.length > 500) {
+      throw new Error('Text length cannot exceed 500 characters');
+    }
   }
 }
 
@@ -191,6 +244,23 @@ functions.http('controlRobot', (req, res) => {
             r_left: params.r_left || 0,
             r_forward: params.r_forward || 0
           };
+          break;
+        case 'speak':
+          action = 'speak';
+          extraParams = {
+            text: params.text
+          };
+          break;
+        case 'battery':
+          action = 'battery';
+          break;
+        case 'beep':
+          action = 'beep';
+          if (params.frequency !== undefined || params.duration !== undefined) {
+            extraParams = {};
+            if (params.frequency !== undefined) extraParams.frequency = params.frequency;
+            if (params.duration !== undefined) extraParams.duration = params.duration;
+          }
           break;
         default:
           return res.status(400).json({ error: `Unsupported command: ${command}` });

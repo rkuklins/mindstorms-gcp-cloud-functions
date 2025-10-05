@@ -94,6 +94,7 @@ A Google Cloud Function that provides remote control capabilities for LEGO Minds
 | `get_status` | Get robot status | None |
 | `get_help` | Get help information | None |
 | `joystick_control` | Joystick input | `l_left`, `l_forward`, `r_left`, `r_forward` |
+| `speak` | **🆕 Text-to-speech** | `text` (string, max 500 chars) |
 
 ---
 
@@ -195,7 +196,8 @@ npm run lint         # Code linting
 
 ## 🎯 Recent Changes
 
-### Latest Updates (August 2025)
+### Latest Updates (October 2025)
+- ✅ **Added `speak` command** for text-to-speech functionality
 - ✅ **Added `stop_turret` command** for independent turret stopping
 - ✅ **Enhanced CORS configuration** with OPTIONS method support
 - ✅ **Updated API key handling** in headers
